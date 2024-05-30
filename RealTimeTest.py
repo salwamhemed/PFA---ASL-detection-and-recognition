@@ -9,7 +9,7 @@ from keras._tf_keras.keras.models import load_model
 import mediapipe as mp
 
 # Load your trained model and labels
-model = load_model(r"C:\Users\salwa\OneDrive\Desktop\PFA\final_model_1.h5")
+model = load_model(r"PFA\final_model_1.h5")
 labels = sorted(['_', '0', '1', '2', '3',
           '4', '5', '6', '7', '8', '9','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
           'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
