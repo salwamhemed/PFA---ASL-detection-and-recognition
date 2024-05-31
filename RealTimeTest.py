@@ -5,11 +5,16 @@ import cv2
 import os
 from tkinter import Tk, Label, Frame, GROOVE
 from PIL import Image, ImageTk
-from keras._tf_keras.keras.models import load_model
 import mediapipe as mp
+import pickle 
 
-# Load your trained model and labels
-model = load_model(r"PFA\final_model_1.h5")
+
+# Load the model from the pickle file
+with open(r'C:\Users\salwa\OneDrive\Desktop\PFA\PFA_model.pkl', 'rb') as f:
+    model = pickle.load(f)
+
+
+data_dir = r'C:\Users\salwa\OneDrive\Desktop\PFA\Data2'
 labels = sorted(['_', '0', '1', '2', '3',
           '4', '5', '6', '7', '8', '9','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
           'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
