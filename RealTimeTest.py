@@ -2,64 +2,82 @@ import numpy as np
 import math
 import time
 import cv2
-import os
-from tkinter import Tk, Label, Frame, GROOVE
+import tkinter as tk
+from tkinter import Label, Button, Frame, GROOVE
 from PIL import Image, ImageTk
 import mediapipe as mp
-import pickle 
+from keras._tf_keras.keras.models import load_model
+import pyttsx3
 
+# Load your Keras model
+model = load_model(r"C:\Users\salwa\OneDrive\Desktop\PFA\final_model_with_words_2.h5")
+labels = sorted(['_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'hello', 'please', 'okay'])
+labels[-1] = ''
 
-# Load the model from the pickle file
-with open(r'C:\Users\salwa\OneDrive\Desktop\PFA\PFA_model.pkl', 'rb') as f:
-    model = pickle.load(f)
-
-
-data_dir = r'C:\Users\salwa\OneDrive\Desktop\PFA\Data2'
-labels = sorted(['_', '0', '1', '2', '3',
-          '4', '5', '6', '7', '8', '9','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-          'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-          'U', 'V', 'W', 'X', 'Y', 'Z' ])
-labels[-1] = 'Nothing'
-print(labels)
 
 # Initialize Mediapipe hand tracking
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=False, max_num_hands=1, min_detection_confidence=0.7, min_tracking_confidence=0.5)
-imgSize=300
+imgSize = 300
+
 # Initialize VideoCapture object
 cap = cv2.VideoCapture(0)
 
 # Create a Tkinter window
-win = Tk()
-win.title('Sign Language Recognition')
+win = tk.Tk()
+win.title('Sign Language Translator')
+win.configure(bg='white')  # Set background color of main window to white
 
 # Create a Label widget for the title
-label_title = Label(win, text='Sign Language Recognition', font=('Comic Sans MS', 26, 'bold'), bd=5, bg='#20262E', fg='#F5EAEA', relief=GROOVE)
+label_title = Label(win, text='Sign Language Translator', font=('Comic Sans MS', 26, 'bold'), bd=5, bg='#20262E', fg='#F5EAEA', relief=GROOVE)
 label_title.pack(pady=20)
 
-# Create a frame to hold the camera feed
-frame_cam = Frame(win)
-frame_cam.pack()
+# Initialize pyttsx3 engine
+engine = pyttsx3.init()
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+
+# Create a frame to hold the camera feed and signs image
+frame_main = Frame(win, bg='white')  # Set background color of main frame to white
+frame_main.pack(fill=tk.BOTH, expand=True)
+
+# Create a frame for the camera feed
+frame_cam = Frame(frame_main, bg='white')  # Set background color of camera frame to white
+frame_cam.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
 # Create a Label widget to display the camera feed
-label_img = Label(frame_cam)
-label_img.pack()
+label_img = Label(frame_cam, bg='white')
+label_img.pack(fill=tk.BOTH, expand=True)
+
+# Load and display the image of all signs and letters
+image_path = r"C:\Users\salwa\OneDrive\Desktop\PFA\444776630_333883329572257_5731648984961755239_n.jpg" # Replace with your image path
+img = Image.open(image_path)
+img = img.resize((500, 400))  # Resize the image as needed
+photo = ImageTk.PhotoImage(img)
+
+# Create a Label widget for the image
+label_signs = Label(frame_main, image=photo, bg='white')
+label_signs.image = photo  # Store the PhotoImage object in a persistent variable
+label_signs.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.BOTH, expand=True)
 
 # Create a Label widget for the predicted gesture
-label_info = Label(win, text='Predicted Gesture:', font=('Arial', 18))
+label_info = Label(win, text='Predicted Gesture:', font=('Arial', 18), bg='white')
 label_info.pack(pady=10)
 
 # Create a Label widget for the predicted character
-label_info_text = Label(win, text='', font=('Arial', 18))
+label_info_text = Label(win, text='', font=('Arial', 18), bg='white')
 label_info_text.pack(pady=10)
 
 # Create a Label widget for the sentence
-label_sentence = Label(win, text='The sentence:', font=('Arial', 18))
+label_sentence = Label(win, text='The sentence:', font=('Arial', 18), bg='white')
 label_sentence.pack(pady=(10, 20))
 
 # Function to update the GUI with the latest camera feed
 def update_gui():
-    global last_prediction_time, sentence
+    global last_prediction_time, sentence, photo
     
     success, img = cap.read()
     
@@ -140,8 +158,6 @@ def update_gui():
             if time.time() - last_prediction_time >= 4:
                 # Update the sentence with the predicted character
                 sentence += predicted_char
-                # Fill the rectangle around the hand with black color
-                cv2.rectangle(imgOutput, (x, y), (x + w, y + h), (0, 0, 0), -1)
                 # Update the text of the sentence label
                 label_sentence.config(text='The sentence: ' + sentence)
                 # Update the predicted character label
@@ -151,6 +167,9 @@ def update_gui():
 
     # Add a frame around the camera feed
     cv2.rectangle(imgOutput, (0, 0), (imgOutput.shape[1], imgOutput.shape[0]), (0, 0, 0), 2)
+
+    # Resize the image for display
+    imgOutput = cv2.resize(imgOutput, (500, 400))  # Adjust the dimensions as needed
 
     # Convert the OpenCV image to RGB format and then to ImageTk format
     imgOutput = cv2.cvtColor(imgOutput, cv2.COLOR_BGR2RGB)
@@ -170,11 +189,45 @@ last_prediction_time = time.time()
 # Initialize the sentence variable
 sentence = ''
 
+# Function to clear the predicted sentence
+def clear_sentence():
+    global sentence
+    sentence = ''
+    label_sentence.config(text='The sentence: ' + sentence)
+
+# Function to delete the last character in the sentence
+def delete_character():
+    global sentence
+    if len(sentence) > 0:
+        sentence = sentence[:-1]  # Remove the last character
+        label_sentence.config(text='The sentence: ' + sentence)
+
+# Function to read out the predicted sentence
+def read_sentence():
+    global sentence
+    speak(sentence)
+
+# Create a Frame to hold the buttons
+frame_buttons = Frame(win, bg='white')  # White background for the frame
+frame_buttons.pack(pady=20)  # Adjust pady as needed to center vertically
+
+# Create a Button widget for reading the sentence
+button_read = Button(frame_buttons, text="Read", font=('Arial', 12), command=read_sentence, relief=GROOVE)
+button_read.pack(side=tk.LEFT, padx=10)  # Adjust padx for spacing between buttons
+
+# Create a Button widget for deleting the last character
+button_delete = Button(frame_buttons, text="Delete", font=('Arial', 12), command=delete_character, relief=GROOVE)
+button_delete.pack(side=tk.LEFT, padx=10)  # Adjust padx for spacing between buttons
+
+# Create a Button widget for clearing the sentence
+button_clear = Button(frame_buttons, text="Clear", font=('Arial', 12), command=clear_sentence, relief=GROOVE)
+button_clear.pack(side=tk.LEFT, padx=10)  # Adjust padx for spacing between buttons
+
 # Start the update_gui function to continuously update the GUI with the camera feed
 update_gui()
 
+# Start the Tkinter main loop
 win.mainloop()
 
 # Release the camera
 cap.release()
-
